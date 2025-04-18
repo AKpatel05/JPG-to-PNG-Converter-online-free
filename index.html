@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" itemscope itemtype="https://schema.org/WebApplication">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free JPG to PNG Converter - High Quality Online Tool</title>
+    <meta name="description" content="Convert JPG images to PNG format instantly. Adjust transparency, remove backgrounds, and download lossless PNG files. 100% free browser-based conversion.">
+    <style>
+        :root {
+            --primary: #2196F3;
+            --secondary: #1976D2;
+            --background: #f8f9fa;
+        }
+
+        /* Base Styles */
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 20px;
+            background: var(--background);
+        }
+
+        .converter-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Drag & Drop Zone */
+        .drop-zone {
+            border: 3px dashed #ccc;
+            padding: 3rem;
+            text-align: center;
+            margin: 1.5rem 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        /* Image Previews */
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .preview-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* Conversion Controls */
+        .controls-panel {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: var(--background);
+            border-radius: 8px;
+        }
+
+        /* Mobile Optimization */
+        @media (max-width: 768px) {
+            .preview-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .drop-zone {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="converter-container">
+        <h1>🖼️ JPG to PNG Converter</h1>
+        
+        <!-- File Input -->
+        <div class="drop-zone" id="dropZone">
+            <input type="file" id="fileInput" accept="image/jpeg" multiple>
+            <p>Drag & drop JPG files or click to upload</p>
+            <p>Max file size: 10MB</p>
+        </div>
+
+        <!-- Conversion Settings -->
+        <div class="controls-panel">
+            <div class="form-group">
+                <label>Transparency:
+                    <input type="checkbox" id="transparencyToggle">
+                </label>
+            </div>
+            
+            <div class="form-group">
+                <label>Background Color:
+                    <input type="color" id="bgColor" value="#ffffff">
+                </label>
+            </div>
+
+            <button id="convertBtn" class="primary-btn">Convert to PNG</button>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="preview-grid" id="previewArea"></div>
+
+        <!-- SEO Content -->
+        <section class="seo-content">
+            <h2>Why Convert JPG to PNG?</h2>
+            <ul>
+                <li>Lossless compression format</li>
+                <li>Support for transparency</li>
+                <li>Better for graphic design projects</li>
+                <li>Higher quality preservation</li>
+            </ul>
+        </section>
+    </div>
+
+    <script>
+        // Conversion Manager
+        class ImageConverter {
+            constructor() {
+                this.files = [];
+                this.converted = [];
+            }
+
+            async processFiles(files) {
+                this.files = [...files];
+                await this.generatePreviews();
+            }
+
+            async generatePreviews() {
+                const previewArea = document.getElementById('previewArea');
+                previewArea.innerHTML = '';
+                
+                this.files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const preview = this.createPreviewCard(file.name, e.target.result);
+                        previewArea.appendChild(preview);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            createPreviewCard(filename, dataUrl) {
+                const card = document.createElement('div');
+                card.className = 'preview-card';
+                card.innerHTML = `
+                    <img src="${dataUrl}" class="preview-image">
+                    <div class="preview-info">
+                        <span>${filename}</span>
+                        <button class="download-btn">Download PNG</button>
+                    </div>
+                `;
+                return card;
+            }
+
+            async convertToPNG(imageElement, options) {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = imageElement.naturalWidth;
+                canvas.height = imageElement.naturalHeight;
+
+                // Apply background settings
+                if(options.transparency) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                } else {
+                    ctx.fillStyle = options.bgColor;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+
+                ctx.drawImage(imageElement, 0, 0);
+                return canvas.toDataURL('image/png');
+            }
+        }
+
+        // UI Controller
+        class AppController {
+            constructor() {
+                this.converter = new ImageConverter();
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                document.getElementById('convertBtn').addEventListener('click', () => this.startConversion());
+                document.getElementById('fileInput').addEventListener('change', (e) => this.handleFiles(e.target.files));
+                
+                // Drag & Drop handlers
+                const dropZone = document.getElementById('dropZone');
+                dropZone.addEventListener('dragover', (e) => e.preventDefault());
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.handleFiles(e.dataTransfer.files);
+                });
+            }
+
+            async handleFiles(files) {
+                const validFiles = Array.from(files).filter(file => 
+                    file.type === 'image/jpeg' && file.size <= 10 * 1024 * 1024
+                );
+                
+                if(validFiles.length === 0) {
+                    alert('Please upload valid JPG files (max 10MB each)');
+                    return;
+                }
+
+                await this.converter.processFiles(validFiles);
+            }
+
+            async startConversion() {
+                const options = {
+                    transparency: document.getElementById('transparencyToggle').checked,
+                    bgColor: document.getElementById('bgColor').value
+                };
+
+                const conversions = Array.from(document.querySelectorAll('.preview-image'))
+                    .map(async (imgElement) => {
+                        const converted = await this.converter.convertToPNG(imgElement, options);
+                        return {
+                            name: imgElement.parentElement.querySelector('span').textContent.replace(/\..+$/, '.png'),
+                            data: converted
+                        };
+                    });
+
+                this.converter.converted = await Promise.all(conversions);
+                this.enableDownloads();
+            }
+
+            enableDownloads() {
+                document.querySelectorAll('.download-btn').forEach((btn, index) => {
+                    btn.onclick = () => this.downloadPNG(index);
+                });
+            }
+
+            downloadPNG(index) {
+                const { name, data } = this.converter.converted[index];
+                const link = document.createElement('a');
+                link.download = name;
+                link.href = data;
+                link.click();
+            }
+        }
+
+        // Initialize Application
+        new AppController();
+    </script>
+</body>
+</html>
